@@ -1,0 +1,26 @@
+# Node Modules
+node_modules
+
+# Enviroment
+.env
+
+# Build
+dist
+
+# Coverage
+coverage
+coverage.json
+.nyc_output
+
+# Hardhat files
+cache
+artifacts
+contracts-exposed
+
+# Typechain
+typechain
+typechain-types
+
+# VSCode / VSCodium
+.vscode
+*.code-workspace

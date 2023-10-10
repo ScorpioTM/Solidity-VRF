@@ -1,0 +1,51 @@
+{
+    "root": true,
+    "overrides": [
+        {
+            "files": "*.ts",
+            "parser": "@typescript-eslint/parser",
+            "parserOptions": {
+                "project": "./tsconfig.json",
+                "sourceType": "script"
+            },
+            "env": {
+                "es2020": true,
+                "node": true,
+                "mocha": true
+            },
+            "plugins": [
+                "@typescript-eslint"
+            ],
+            "extends": [
+                "eslint:recommended",
+                "plugin:@typescript-eslint/recommended",
+                "prettier"
+            ],
+            "rules": {
+                "@typescript-eslint/consistent-type-definitions": [
+                    "error",
+                    "interface"
+                ],
+                "no-console": "warn"
+            }
+        },
+        {
+          "files": "*.js",
+          "parserOptions": {
+            "sourceType": "script"
+          },
+          "env": {
+            "es2020": true,
+            "node": true,
+            "mocha": true
+          },
+          "extends": [
+            "eslint:recommended",
+            "prettier"
+          ],
+          "rules": {
+            "no-console": "warn"
+          }
+        }
+    ]
+}

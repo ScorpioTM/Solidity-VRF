@@ -1,0 +1,69 @@
+{
+  "name": "solidity-vrf",
+  "version": "1.0.0-beta.0",
+  "description": "Solidity VRF (Verifiable Random Function) using the commit-reveal scheme.",
+  "author": "J. M. Vazquez",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "bin/**/*.js",
+    "contracts/**/*.sol",
+    "artifacts/contracts/**/*.json",
+    "!artifacts/contracts/**/*.dbg.json"
+  ],
+  "scripts": {
+    "build": "npm run build:clean && npm run build:compile",
+    "build:clean": "hardhat clean && tsc --build --clean && rimraf \"cache\" \"dist\"",
+    "build:compile": "hardhat compile && tsc --build",
+    "prettier": "npm run prettier:sol && npm run prettier:ts && npm run prettier:js",
+    "prettier:fix": "npm run prettier:sol:fix && npm run prettier:ts:fix && npm run prettier:js:fix",
+    "prettier:js": "prettier \"test/*.js\" --ignore-path .gitignore --check",
+    "prettier:js:fix": "prettier \"test/*.js\" --ignore-path .gitignore --write",
+    "prettier:ts": "prettier \"source/*.ts\" --ignore-path .gitignore --check",
+    "prettier:ts:fix": "prettier \"source/*.ts\" --ignore-path .gitignore --write",
+    "prettier:sol": "prettier \"contracts/*.sol\" --ignore-path .gitignore --check",
+    "prettier:sol:fix": "prettier \"contracts/*.sol\" --ignore-path .gitignore --write",
+    "lint": "npm run lint:sol && npm run lint:ts && npm run lint:js",
+    "lint:fix": "npm run lint:sol:fix && npm run lint:ts:fix && npm run lint:js:fix",
+    "lint:js": "npm run prettier:js && eslint \"test/*.js\" --ignore-path .gitignore",
+    "lint:js:fix": "npm run prettier:js:fix && eslint \"test/*.js\" --ignore-path .gitignore --fix",
+    "lint:ts": "npm run prettier:ts && eslint \"source/*.ts\" --ignore-path .gitignore",
+    "lint:ts:fix": "npm run prettier:ts:fix && eslint \"source/*.ts\" --ignore-path .gitignore --fix",
+    "lint:sol": "npm run prettier:sol && solhint \"contracts/*.sol\" --ignore-path .gitignore",
+    "lint:sol:fix": "npm run prettier:sol:fix && solhint \"contracts/*.sol\" --ignore-path .gitignore --fix",
+    "test": "cross-env NODE_ENV=test hardhat test --network localhost",
+    "test:gas": "cross-env REPORT_GAS=true npm run test"
+  },
+  "bin": {
+    "new-wallet": "bin/new-wallet.js",
+    "vrf-api": "bin/vrf-api.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@types/express": "^4.17.17",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "chai-http": "^4.4.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "hardhat": "^2.17.3",
+    "hardhat-exposed": "^0.3.12",
+    "prettier": "^3.0.3",
+    "prettier-plugin-solidity": "^1.1.3",
+    "rimraf": "^5.0.1",
+    "solhint": "^3.6.2",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.7.1",
+    "express": "^4.18.2",
+    "redis": "^4.6.10"
+  }
+}
