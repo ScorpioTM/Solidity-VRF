@@ -8,10 +8,25 @@ import { listener } from './listener';
 import type { Request, Response, NextFunction } from 'express';
 import type { RedisClientType } from 'redis';
 
+/**
+ * Represents an HTTP exception with status and message.
+ */
 class HttpException extends Error {
+  /**
+   * The HTTP status code for the exception.
+   */
   public status: number;
+
+  /**
+   * The error message for the exception.
+   */
   public message: string;
 
+  /**
+   * Constructs an HTTP exception.
+   * @param status The HTTP status code.
+   * @param message The error message.
+   */
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
@@ -19,6 +34,11 @@ class HttpException extends Error {
   }
 }
 
+/**
+ * Sets up an Express router with VRF commit and related endpoints.
+ * @param operatorConfig The configuration for the VRF operator.
+ * @returns An Express router with VRF endpoints.
+ */
 export const router = (operatorConfig: {
   redisUrl: string;
   jsonRpcUrl: string;
@@ -62,24 +82,27 @@ export const router = (operatorConfig: {
       if (!req.query.hash || !ethers.isHexString(req.query.hash, 32))
         throw new HttpException(400, 'The `hash` parameter is invalid.');
 
-      // guestAddress: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-      // guestSeedHash: 0x3b089ef57030e354bd75ad91f4d68ee9d1f09a130597f5ad7ed88fd2db3dda5a
+      // Generate an operator seed and seed hash
       const operatorSeed: Buffer = randomBytes(32);
       const operatorSeedHash: string = ethers.keccak256(operatorSeed);
 
+      // Calculate the expiration timestamp
       const expiration: number = Math.floor(Date.now() / 1000) + operatorConfig.expiration;
 
+      // Create the operator data and its hash
       const operatorData: string = ethers.solidityPacked(
         ['bytes32', 'bytes32', 'address', 'uint256'],
         [req.query.hash, operatorSeedHash, req.query.address, expiration]
       );
       const operatorDataHash: string = ethers.keccak256(operatorData);
 
+      // Sign the operator data hash
       const operatorSignature: string = await signer.signMessage(ethers.getBytes(operatorDataHash));
 
-      // Save the operator seed for this commit
+      // Save the operator seed for this commit in Redis
       await redisClient.set(operatorDataHash, '0x' + operatorSeed.toString('hex'), { EX: operatorConfig.expiration });
 
+      // Respond with commit details
       res.json({
         commit_id: operatorDataHash,
         seed_hash: operatorSeedHash,
@@ -91,6 +114,7 @@ export const router = (operatorConfig: {
     }
   });
 
+  // Error handling middleware
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   router.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     if (error) {

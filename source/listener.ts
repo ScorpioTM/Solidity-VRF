@@ -6,15 +6,34 @@ import CommitRevealVRFABI from './abis/CommitRevealVRF.json';
 import type { ContractEventPayload } from 'ethers';
 import type { RedisClientType } from 'redis';
 
+/**
+ * Represents a pending commitment.
+ */
 interface PendingCommit {
+  /**
+   * The operator's seed for the commitment.
+   */
   operatorSeed: string;
+
+  /**
+   * The confirmation block number.
+   */
   confirmationBlock: number;
 }
 
+/**
+ * Sets up an event listener to automatically reveal new commits in a Solidity smart contract.
+ *
+ * @param redisClient The Redis client to retrieve operator seeds.
+ * @param provider The Ethereum provider to listen for events.
+ * @param signer The wallet or signer for transaction signing.
+ * @param address The address of the target contract.
+ * @param confirmations The number of confirmations required to reveal a commit (minimum 1 block).
+ */
 export function listener(
   redisClient: RedisClientType,
-  provider: ethers.JsonRpcProvider,
-  signer: ethers.Wallet,
+  provider: ethers.JsonRpcProvider | ethers.WebSocketProvider,
+  signer: ethers.Wallet | ethers.Signer,
   address: string,
   confirmations: number
 ) {
