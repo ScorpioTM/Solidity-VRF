@@ -43,7 +43,7 @@ To use the `solidity-vrf` package, follow these steps:
 
 2. Use the [`CommitRevealVRF`](#smart-contract) smart contract for random number generation by creating a child smart contract. Detailed usage instructions are available in the [`Smart Contract Usage`](#usage-1) section.
 
-3. Integrate the [`Express.js Middleware`](#expressjs-middleware) into your application for secure random seed commitments and retrieval. Configuration details can be found in the [`Express.js Middleware Usage`](#usage-2) section.
+3. Integrate the [`Express.js Middleware`](#expressjs-middleware) into your application for secure random seed commitments and reveals. Configuration details can be found in the [`Express.js Middleware Usage`](#usage-2) section.
 
 # Installation
 
