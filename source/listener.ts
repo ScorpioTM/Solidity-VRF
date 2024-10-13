@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 import { ethers } from 'ethers';
+import { EventFetcher } from './event-fetcher';
 import { revealCommit } from './helpers/revealCommit';
 import CommitRevealVRFABI from './abis/CommitRevealVRF.json';
 
-import type { ContractEventPayload } from 'ethers';
+import type { EventLog } from 'ethers';
 import type { RedisClientType } from 'redis';
 
 /**
@@ -36,7 +37,7 @@ export function listener(
   signer: ethers.Wallet | ethers.Signer,
   address: string,
   confirmations: number
-) {
+): EventFetcher {
   if (!address || !ethers.isAddress(address)) throw new Error('You must specify a valid contract address.');
   if (!confirmations)
     throw new Error('You must specify the number of confirmations required to approve a commit (Minimum 1 block).');
@@ -50,8 +51,14 @@ export function listener(
   // Holds the number of the last block
   let blockNumber: number = 0;
 
+  const fetcher = new EventFetcher('SeedCommitted');
+
+  fetcher.on('error', (message, error) => {
+    console.error(message, error);
+  });
+
   // Listen for new blocks
-  provider.on('block', async (newBlock: number) => {
+  fetcher.on('block', async (newBlock: number) => {
     blockNumber = newBlock;
 
     // Loop through the pending commits
@@ -61,11 +68,11 @@ export function listener(
       // Check if this commit is ready to be revealed
       if (pendingCommit.confirmationBlock <= blockNumber) {
         try {
+          // Reveal this commit
+          await revealCommit(contract, commitId, pendingCommit.operatorSeed, { nonce: await provider.getTransactionCount(await signer.getAddress()) });
+
           // Delete this commit from the pending list
           delete pendingCommits[commitId];
-
-          // Reveal this commit
-          await revealCommit(contract, commitId, pendingCommit.operatorSeed);
         } catch (e: unknown) {
           if (process.env.NODE_ENV !== 'test') console.error('Commit Reveal Error:', e);
         }
@@ -74,36 +81,42 @@ export function listener(
   });
 
   // Listen for new commits
-  contract.on(
-    'SeedCommitted',
+  fetcher.on(
+    'event',
     async (
       commitId: string,
       userSeed: string,
       operatorSeedHash: string,
       commitOwner: string,
-      event: ContractEventPayload
+      event: EventLog
     ) => {
       try {
         // Get the operator seed for this commit
         const operatorSeed: string | null = await redisClient.get(commitId);
         if (!operatorSeed) throw new Error('This commit has expired or does not exist.');
 
+        if (process.env.NODE_ENV === 'development') console.log(`Listener: New commit detected [ID: ${commitId}, Owner: ${commitOwner}]`);
+
         // Check if this commit is ready to be revealed
-        if (blockNumber >= event.log.blockNumber + (confirmations - 1)) {
+        if (blockNumber >= event.blockNumber + (confirmations - 1)) {
           // Reveal this commit
-          await revealCommit(contract, commitId, operatorSeed);
+          await revealCommit(contract, commitId, operatorSeed, { nonce: await provider.getTransactionCount(await signer.getAddress()) });
         } else {
           // Add this commit to the pending list
           pendingCommits[commitId] = {
             operatorSeed: operatorSeed,
-            confirmationBlock: event.log.blockNumber + (confirmations - 1)
+            confirmationBlock: event.blockNumber + (confirmations - 1)
           };
         }
       } catch (e: unknown) {
-        if (process.env.NODE_ENV !== 'test') console.error('Commit Reveal Error:', e);
+        if (process.env.NODE_ENV !== 'test') console.error('Listener: Commit reveal error:', e);
       }
     }
   );
+
+  fetcher.start(provider, contract);
+
+  return fetcher;
 }
 
 export default listener;

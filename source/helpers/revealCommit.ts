@@ -12,6 +12,11 @@ interface ContractMethodOverrides {
    * The gas limit for the transaction, specified as a numeric value.
    */
   gasLimit?: ethers.Numeric;
+
+  /**
+   * The nonce to use for the transaction, specified as a numeric value.
+   */
+  nonce?: ethers.Numeric;
 }
 
 /**
@@ -26,8 +31,14 @@ interface ContractMethodOverrides {
  */
 export async function revealCommit(contract: ethers.Contract, commit_id: string, operatorSeed: string, args: ContractMethodOverrides = {}): Promise<{ seed: string, transaction: string }> {
   try {
-    // Attempt to perform the reveal transaction by calling the 'reveal' method of the smart contract
-    const revealResponse: ethers.ContractTransactionResponse = await contract.reveal(commit_id, operatorSeed, { gasPrice: args.gasPrice, gasLimit: args.gasLimit });
+    // Set the overrides to be used on the reveal transaction
+    const overrides: ContractMethodOverrides = {};
+    if (args.gasPrice) overrides.gasPrice = args.gasPrice;
+    if (args.gasLimit) overrides.gasLimit = args.gasLimit;
+    if (args.nonce) overrides.nonce = args.nonce;
+
+    // Attempt to perform the reveal transaction by calling the `reveal` method of the smart contract
+    const revealResponse: ethers.ContractTransactionResponse = await contract.reveal(commit_id, operatorSeed, overrides);
 
     // Wait for the transaction to be confirmed
     const revealReceipt: ethers.ContractTransactionReceipt | null = await revealResponse.wait();
@@ -44,12 +55,28 @@ export async function revealCommit(contract: ethers.Contract, commit_id: string,
     };
   } catch (e: unknown) {
     // Handle different types of errors
-    if (ethers.isCallException(e)) {
-      throw new Error('A call exception error occurred while trying to reveal the commit. (Error name: ' + e.revert + ')');
+    if (ethers.isError(e, 'CALL_EXCEPTION')) {
+      // Handle `require` errors
+      if (e.reason) {
+        throw new Error(`revealCommit: A call exception error occurred while trying to reveal the commit. (Reason: ${e.reason})`);
+      } else if (e.revert) {
+        throw new Error(`revealCommit: A call exception error occurred while trying to reveal the commit. (Name: ${e.revert.name}), Arguments: ['${e.revert.args.join(', ')}']`);
+      } else {
+        throw new Error('revealCommit: A unknown call exception error occurred while trying to reveal the commit.', { cause: e });
+      }
+    } else if (ethers.isError(e, 'INSUFFICIENT_FUNDS')) {
+      throw new Error('revealCommit: Insufficient funds for this transaction');
+    } else if (ethers.isError(e, 'NONCE_EXPIRED')) {
+      throw new Error('revealCommit: This nonce is already used in a transaction');
+    } else if (ethers.isError(e, 'NETWORK_ERROR')) {
+      if (e.event) throw new Error(`revealCommit: Can't connect to the network (Event: ${e.event})`);
+      throw new Error(`revealCommit: Can't connect to the network`);
+    } else if (ethers.isError(e, 'TIMEOUT')) {
+      throw new Error('revealCommit: Transaction timed out');
     } else if (e instanceof Error) {
       throw new Error(e.message);
     } else {
-      throw new Error('An unknown error occurred while trying to reveal the commit.');
+      throw new Error('revealCommit: An unknown error occurred while trying to reveal the commit.');
     }
   }
 }

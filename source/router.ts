@@ -75,7 +75,7 @@ export const router = (operatorConfig: {
 
   listener(redisClient, provider, signer, operatorConfig.vrfAddress, operatorConfig.confirmations);
 
-  router.get('/commit', async (req: Request, res: Response, next: NextFunction) => {
+  async function handler(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.query.address || !ethers.isAddress(req.query.address))
         throw new HttpException(400, 'The `address` parameter is invalid.');
@@ -112,7 +112,10 @@ export const router = (operatorConfig: {
     } catch (e: unknown) {
       return next(e);
     }
-  });
+  }
+
+  router.get('/commit', handler);
+  router.post('/commit', handler);
 
   // Error handling middleware
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
