@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.20;
 
 import { ICommitRevealVRF } from "./interfaces/ICommitRevealVRF.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
@@ -11,6 +12,7 @@ import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  */
 abstract contract CommitRevealVRF is ICommitRevealVRF, AccessControl {
     // Import the ECDSA library to enable signature verification
+    using MessageHashUtils for bytes32;
     using ECDSA for bytes32;
 
     // Define the operator role
